@@ -1,0 +1,51 @@
+{
+  "id": "quest-001",
+  "title": "The Dragon's Math Cave",
+  "description": "A dragon has locked the village treasure! Solve math problems to unlock the cave and save the day!",
+  "subject": "Math",
+  "gradeLevel": "4-5",
+  "xpReward": 100,
+  "itemReward": "Golden Shield",
+  "questions": [
+    {
+      "id": 1,
+      "question": "What is 24 x 6?",
+      "choices": ["134", "144", "154", "164"],
+      "answer": "144",
+      "hint": "Try breaking it up — 20 x 6 plus 4 x 6!",
+      "xp": 20
+    },
+    {
+      "id": 2,
+      "question": "What is 156 ÷ 4?",
+      "choices": ["36", "38", "39", "41"],
+      "answer": "39",
+      "hint": "How many times does 4 go into 156?",
+      "xp": 20
+    },
+    {
+      "id": 3,
+      "question": "What is 1,250 + 875?",
+      "choices": ["2,025", "2,125", "2,225", "2,325"],
+      "answer": "2,125",
+      "hint": "Add the hundreds first, then the rest!",
+      "xp": 20
+    },
+    {
+      "id": 4,
+      "question": "What is 15% of 200?",
+      "choices": ["25", "30", "35", "40"],
+      "answer": "30",
+      "hint": "10% of 200 is 20, what is 5% of 200?",
+      "xp": 20
+    },
+    {
+      "id": 5,
+      "question": "A dragon has 48 gold coins and splits them equally among 6 knights. How many coins does each knight get?",
+      "choices": ["6", "7", "8", "9"],
+      "answer": "8",
+      "hint": "This is a division problem — 48 divided by 6!",
+      "xp": 20
+    }
+  ]
+}
