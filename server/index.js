@@ -3,10 +3,12 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 require('dotenv').config();
-const mongoose = require('mongoose');
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB connection error:', err.message));
+
+// Skipping MongoDB for today's demo — using hardcoded questions instead.
+// const mongoose = require('mongoose');
+// mongoose.connect(process.env.MONGODB_URI)
+//   .then(() => console.log('✅ MongoDB connected'))
+//   .catch(err => console.error('❌ MongoDB connection error:', err.message));
 
 const app = express();
 const server = http.createServer(app);
