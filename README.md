@@ -27,6 +27,10 @@ Think:
 | Original collectible jungle creatures | ✅ Playable |
 | XP, levels & quest rewards (Golden Shield) | ✅ Playable |
 | Real-time multiplayer jungle (Socket.io) with Crew XP goal | ✅ Playable |
+| Animated math visuals (number line, tape diagrams, balance scale, graphs) | ✅ Playable |
+| 8 built-in languages + any language via AI | ✅ Playable |
+| Ms. Mae-Mae's voice (text-to-speech in the chosen language) | ✅ Playable |
+| Accessibility: screen reader layer, keyboard play, captions, ASL video panel | ✅ Playable (ASL clips to be recorded) |
 | Ms. Mae-Mae LLM mentor | 🔧 In Progress |
 | Turn-based battle system | 📋 Planned |
 | Student dashboard | 📋 Planned |
@@ -43,6 +47,8 @@ Each question is brought by a jungle creature. Solve it to befriend the creature
 - **Ms. Mae-Mae's walkthroughs:** a wrong answer shows hint steps; a second wrong answer shows the full walkthrough; a third reveals the solution and moves on. `client/src/mentor/frustrationDetector.js` spots repeated misses, rapid guessing and idling, and Ms. Mae-Mae responds.
 - **Rewards:** +20 XP per creature befriended, +100 XP quest bonus and the **Golden Shield**. XP, items and creatures are saved to the player's profile.
 - **Character creator:** students design their explorer (6 skin tones, 8 hairstyles including locs, braids, puffs and afros, 7 hair colors, 4 outfits, 6 colors, accessories) and pick a companion: **Lumacaw**, **Fernpaw**, **Glimmertoad** or **Coilvine**. All art is original and drawn in SVG (`client/src/art/`).
+- **Student-paced feedback:** after a wrong answer, Ms. Mae-Mae explains one step at a time. Each step waits for her to finish speaking (or gives plenty of reading time) and students can press **Next ▶** / Enter when ready.
+- **Math animations:** every question has an animated visual (`client/src/visuals/`). The student's companion hops along a number line, tape diagrams fill in, a balance scale shows doing the same thing to both sides, and graphs draw lines and parabolas. The visual follows the walkthrough step by step and plays to the answer on a correct response.
 - **Multiplayer:** students in the same grade band share a jungle room and see each other move in real time. They cheer each other on with preset emotes (no free-text chat), and every correct answer fills a shared **Crew XP** goal. The server only accepts known avatar options and cleaned-up nicknames.
 
 ---
@@ -115,6 +121,16 @@ cd client && npm run dev
 Open the game at `http://localhost:5173` (the API runs on `http://localhost:5000`). To try multiplayer, open the game in two browser windows and pick the same grade band.
 
 If the server isn't running, the game still works in solo mode with built-in offline questions.
+
+---
+
+## 🌐 Languages, voice & accessibility
+
+- **Built-in languages:** English, Español, Eesti (Estonian), Français, العربية (right-to-left), 中文, Tiếng Việt, Kreyòl ayisyen. Everything is translated, including Ms. Mae-Mae's lines and all 30 questions and walkthroughs (`client/src/i18n/`).
+- **Any other language:** students can type a language under **Other language (AI)**. The server translates through Google Gemini, so add `GEMINI_API_KEY=...` to your `.env` (optional: `GEMINI_MODEL`). Without a key the game says so and stays in English.
+- **Voice:** Ms. Mae-Mae reads her lines and the questions aloud with the browser's text-to-speech in the chosen language. Students can turn the voice off or slow it down. Available voices depend on the device.
+- **Blind / low-vision students:** the canvas is mirrored into an accessible layer that screen readers announce, with real buttons for each answer (press Tab). Keys 1–4 answer, Enter / Space continue.
+- **Deaf / hard-of-hearing students:** everything spoken is also captioned, answers are marked ✔ / ✘ (not just by color), and an **ASL panel** plays signer videos for each line. See [`docs/ASL_VIDEOS.md`](docs/ASL_VIDEOS.md) and the clip checklist [`docs/asl-clips.csv`](docs/asl-clips.csv).
 
 ---
 

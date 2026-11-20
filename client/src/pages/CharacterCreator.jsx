@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { avatarSvg } from '../art/avatar';
 import { CREATURES } from '../art/creatures';
 import { svgToDataUri } from '../art/color';
@@ -6,15 +6,15 @@ import {
   SKIN_TONES, HAIR_STYLES, HAIR_COLORS, OUTFITS, OUTFIT_COLORS, ACCESSORIES,
   DEFAULT_AVATAR, sanitizeAvatar,
 } from '../art/avatarOptions';
-import { loadProfile, saveProfile } from '../game/profile';
-
-const GRADE_BANDS = [
-  { id: '6-8', label: 'Grades 6–8', detail: 'Ratios, integers, equations, slope' },
-  { id: '9-12', label: 'Grades 9–12', detail: 'Algebra, quadratics, exponents, logs' },
-];
+import { loadProfile, saveProfile, DEFAULT_SETTINGS } from '../game/profile';
+import { LANGUAGES, setLanguage, t, currentLanguage } from '../i18n';
 
 function cleanName(name) {
   return name.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 16);
+}
+
+function cleanLanguageName(name) {
+  return name.replace(/[^\p{L} ()-]/gu, '').slice(0, 40);
 }
 
 export default function CharacterCreator({ defaultName = '', onDone }) {
@@ -22,10 +22,21 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
   const [name, setName] = useState(cleanName(saved?.name || defaultName));
   const [gradeBand, setGradeBand] = useState(saved?.gradeBand || '6-8');
   const [avatar, setAvatar] = useState(sanitizeAvatar(saved?.avatar || DEFAULT_AVATAR));
+  const [settings, setSettings] = useState({ ...DEFAULT_SETTINGS, ...(saved?.settings || {}) });
+  const [, setLangVersion] = useState(0);
+
+  // Show the creator in the chosen built-in language right away.
+  // (AI languages are translated when the game starts.)
+  useEffect(() => {
+    const builtIn = settings.language === 'ai' ? { language: 'en' } : settings;
+    setLanguage(builtIn).then(() => setLangVersion((v) => v + 1));
+  }, [settings]);
 
   const previewUri = useMemo(() => svgToDataUri(avatarSvg(avatar)), [avatar]);
   const set = (key, value) => setAvatar((a) => ({ ...a, [key]: value }));
-  const canStart = name.trim().length >= 2;
+  const aiReady = settings.language !== 'ai' || settings.aiLanguage.trim().length >= 2;
+  const canStart = name.trim().length >= 2 && aiReady;
+  const rtl = currentLanguage().rtl;
 
   const randomize = () => {
     const pick = (obj) => {
@@ -45,8 +56,7 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
 
   const start = async () => {
     if (!canStart) return;
-    const profile = saveProfile({ name: name.trim(), gradeBand, avatar });
-    // Best effort: also save on the server so the profile follows the player.
+    const profile = saveProfile({ name: name.trim(), gradeBand, avatar, settings });
     try {
       await fetch('/api/players/profile', {
         method: 'POST',
@@ -59,15 +69,21 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
     onDone(profile);
   };
 
+  const bands = [
+    { id: '6-8', label: t('creator.band68'), detail: t('creator.band68Detail') },
+    { id: '9-12', label: t('creator.band912'), detail: t('creator.band912Detail') },
+  ];
+  const labels = (prefix, obj) => Object.fromEntries(Object.keys(obj).map((k) => [k, t(`${prefix}.${k}`)]));
+
   return (
-    <div style={styles.page}>
-      <h1 style={styles.title}>Create Your Explorer</h1>
-      <p style={styles.subtitle}>Design your look and pick a jungle companion. Other players will see you in the jungle!</p>
+    <div style={styles.page} dir={rtl ? 'rtl' : 'ltr'}>
+      <h1 style={styles.title}>{t('creator.title')}</h1>
+      <p style={styles.subtitle}>{t('creator.subtitle')}</p>
 
       <div style={styles.layout}>
         <div style={styles.previewCard}>
           <div style={styles.previewStage}>
-            <img src={previewUri} alt="Your explorer" style={{ width: 180, height: 255 }} />
+            <img src={previewUri} alt="" style={{ width: 180, height: 255 }} />
             <img
               src={svgToDataUri(CREATURES[avatar.companion].svg)}
               alt={CREATURES[avatar.companion].name}
@@ -77,19 +93,51 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
           <input
             value={name}
             onChange={(e) => setName(cleanName(e.target.value))}
-            placeholder="Explorer name"
+            placeholder={t('creator.namePlaceholder')}
+            aria-label={t('creator.namePlaceholder')}
             maxLength={16}
             style={styles.nameInput}
           />
-          <p style={styles.hint}>Use a nickname, not your real full name.</p>
-          <button type="button" onClick={randomize} style={styles.secondaryBtn}>🎲 Surprise me</button>
+          <p style={styles.hint}>{t('creator.nameHint')}</p>
+          <button type="button" onClick={randomize} style={styles.secondaryBtn}>{t('creator.surprise')}</button>
         </div>
 
         <div style={styles.options}>
-          <Section title="Your level">
+          <Section title={`🌐 ${t('creator.language')}`}>
             <div style={styles.row}>
-              {GRADE_BANDS.map((g) => (
-                <button key={g.id} type="button" onClick={() => setGradeBand(g.id)}
+              {LANGUAGES.map((l) => (
+                <button key={l.code} type="button" lang={l.speech}
+                  onClick={() => setSettings((s) => ({ ...s, language: l.code }))}
+                  aria-pressed={settings.language === l.code}
+                  style={{ ...styles.chip, ...(settings.language === l.code ? styles.selected : {}) }}>
+                  {l.name}
+                </button>
+              ))}
+              <button type="button"
+                onClick={() => setSettings((s) => ({ ...s, language: 'ai' }))}
+                aria-pressed={settings.language === 'ai'}
+                style={{ ...styles.chip, ...(settings.language === 'ai' ? styles.selected : {}) }}>
+                ✨ {t('creator.otherLanguage')}
+              </button>
+            </div>
+            {settings.language === 'ai' && (
+              <div style={{ marginTop: 8 }}>
+                <input
+                  value={settings.aiLanguage}
+                  onChange={(e) => setSettings((s) => ({ ...s, aiLanguage: cleanLanguageName(e.target.value) }))}
+                  placeholder={t('creator.otherLanguagePlaceholder')}
+                  aria-label={t('creator.otherLanguage')}
+                  style={{ ...styles.nameInput, maxWidth: 320 }}
+                />
+                <p style={{ ...styles.hint, marginTop: 6 }}>{t('creator.otherLanguageNote')}</p>
+              </div>
+            )}
+          </Section>
+
+          <Section title={t('creator.level')}>
+            <div style={styles.row}>
+              {bands.map((g) => (
+                <button key={g.id} type="button" onClick={() => setGradeBand(g.id)} aria-pressed={gradeBand === g.id}
                   style={{ ...styles.bandBtn, ...(gradeBand === g.id ? styles.selected : {}) }}>
                   <strong>{g.label}</strong>
                   <span style={{ fontSize: 12, opacity: 0.8 }}>{g.detail}</span>
@@ -98,35 +146,35 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
             </div>
           </Section>
 
-          <Section title="Skin tone">
-            <Swatches options={SKIN_TONES} value={avatar.skinTone} onChange={(v) => set('skinTone', v)} />
+          <Section title={t('creator.skinTone')}>
+            <Swatches options={SKIN_TONES} labels={labels('skin', SKIN_TONES)} value={avatar.skinTone} onChange={(v) => set('skinTone', v)} />
           </Section>
 
-          <Section title="Hair">
-            <Chips options={HAIR_STYLES} value={avatar.hairStyle} onChange={(v) => set('hairStyle', v)} />
+          <Section title={t('creator.hair')}>
+            <Chips labels={labels('hairStyle', HAIR_STYLES)} value={avatar.hairStyle} onChange={(v) => set('hairStyle', v)} />
             <div style={{ height: 8 }} />
-            <Swatches options={HAIR_COLORS} value={avatar.hairColor} onChange={(v) => set('hairColor', v)} />
+            <Swatches options={HAIR_COLORS} labels={labels('hairColor', HAIR_COLORS)} value={avatar.hairColor} onChange={(v) => set('hairColor', v)} />
           </Section>
 
-          <Section title="Outfit">
-            <Chips options={OUTFITS} value={avatar.outfit} onChange={(v) => set('outfit', v)} />
+          <Section title={t('creator.outfit')}>
+            <Chips labels={labels('outfit', OUTFITS)} value={avatar.outfit} onChange={(v) => set('outfit', v)} />
             <div style={{ height: 8 }} />
-            <Swatches options={OUTFIT_COLORS} value={avatar.outfitColor} onChange={(v) => set('outfitColor', v)} />
+            <Swatches options={OUTFIT_COLORS} labels={labels('color', OUTFIT_COLORS)} value={avatar.outfitColor} onChange={(v) => set('outfitColor', v)} />
           </Section>
 
-          <Section title="Accessory">
-            <Chips options={ACCESSORIES} value={avatar.accessory} onChange={(v) => set('accessory', v)} />
+          <Section title={t('creator.accessory')}>
+            <Chips labels={labels('accessory', ACCESSORIES)} value={avatar.accessory} onChange={(v) => set('accessory', v)} />
           </Section>
 
-          <Section title="Jungle companion">
+          <Section title={t('creator.companion')}>
             <div style={styles.row}>
               {Object.values(CREATURES).map((c) => (
                 <button key={c.id} type="button" onClick={() => set('companion', c.id)}
-                  title={c.blurb}
+                  title={t(`creatureBlurb.${c.id}`)} aria-pressed={avatar.companion === c.id}
                   style={{ ...styles.creatureBtn, ...(avatar.companion === c.id ? styles.selected : {}) }}>
-                  <img src={svgToDataUri(c.svg)} alt={c.name} style={{ width: 64, height: 64 }} />
+                  <img src={svgToDataUri(c.svg)} alt="" style={{ width: 64, height: 64 }} />
                   <span style={{ fontWeight: 700 }}>{c.name}</span>
-                  <span style={{ fontSize: 11, opacity: 0.75 }}>{c.type} type</span>
+                  <span style={{ fontSize: 11, opacity: 0.75 }}>{t('creator.typeSuffix', { type: t(`creatureType.${c.type}`) })}</span>
                 </button>
               ))}
             </div>
@@ -134,7 +182,7 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
 
           <button type="button" onClick={start} disabled={!canStart}
             style={{ ...styles.primaryBtn, opacity: canStart ? 1 : 0.5 }}>
-            Enter the Number Jungle →
+            {t('creator.enter')}
           </button>
         </div>
       </div>
@@ -151,11 +199,12 @@ function Section({ title, children }) {
   );
 }
 
-function Swatches({ options, value, onChange }) {
+function Swatches({ options, labels, value, onChange }) {
   return (
     <div style={styles.row}>
       {Object.entries(options).map(([id, opt]) => (
-        <button key={id} type="button" onClick={() => onChange(id)} title={opt.label} aria-label={opt.label}
+        <button key={id} type="button" onClick={() => onChange(id)} title={labels[id]} aria-label={labels[id]}
+          aria-pressed={value === id}
           style={{
             ...styles.swatch,
             background: opt.base,
@@ -166,11 +215,11 @@ function Swatches({ options, value, onChange }) {
   );
 }
 
-function Chips({ options, value, onChange }) {
+function Chips({ labels, value, onChange }) {
   return (
     <div style={styles.row}>
-      {Object.entries(options).map(([id, label]) => (
-        <button key={id} type="button" onClick={() => onChange(id)}
+      {Object.entries(labels).map(([id, label]) => (
+        <button key={id} type="button" onClick={() => onChange(id)} aria-pressed={value === id}
           style={{ ...styles.chip, ...(value === id ? styles.selected : {}) }}>
           {label}
         </button>
@@ -219,7 +268,7 @@ const styles = {
   bandBtn: {
     display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', padding: '10px 14px',
     borderRadius: 12, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.08)',
-    color: '#fff', cursor: 'pointer', flex: '1 1 200px', textAlign: 'left',
+    color: '#fff', cursor: 'pointer', flex: '1 1 200px', textAlign: 'start',
   },
   creatureBtn: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: 8, width: 110,

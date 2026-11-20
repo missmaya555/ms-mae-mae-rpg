@@ -26,6 +26,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/players', require('./routes/players'));
 app.use('/api/quests', require('./routes/quests'));
 app.use('/api/ai-mentor', require('./routes/aiMentor'));
+app.use('/api/translate', require('./routes/translate'));
 require('./sockets/gameSocket')(io);
 app.use('/api/quests/number-jungle', require('./routes/numberJungle'));
 

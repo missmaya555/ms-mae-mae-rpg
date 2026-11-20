@@ -1,0 +1,197 @@
+/**
+ * English — the source language. Every other language pack uses the same
+ * keys; anything missing in a pack falls back to the English text here.
+ *
+ * Question text (prompt, steps, topic) lives with the questions on the
+ * server in English. Language packs translate questions by question id.
+ */
+export default {
+  ui: {
+    // Character creator
+    'creator.title': 'Create Your Explorer',
+    'creator.subtitle': 'Design your look and pick a jungle companion. Other players will see you in the jungle!',
+    'creator.namePlaceholder': 'Explorer name',
+    'creator.nameHint': 'Use a nickname, not your real full name.',
+    'creator.surprise': '🎲 Surprise me',
+    'creator.language': 'Language',
+    'creator.otherLanguage': 'Other language (AI)',
+    'creator.otherLanguagePlaceholder': 'Type a language, e.g. Swahili',
+    'creator.otherLanguageNote': 'Other languages are translated by AI and may not be perfect.',
+    'creator.level': 'Your level',
+    'creator.band68': 'Grades 6–8',
+    'creator.band68Detail': 'Ratios, integers, equations, slope',
+    'creator.band912': 'Grades 9–12',
+    'creator.band912Detail': 'Algebra, quadratics, exponents, logs',
+    'creator.skinTone': 'Skin tone',
+    'creator.hair': 'Hair',
+    'creator.outfit': 'Outfit',
+    'creator.accessory': 'Accessory',
+    'creator.companion': 'Jungle companion',
+    'creator.typeSuffix': '{type} type',
+    'creator.enter': 'Enter the Number Jungle →',
+
+    // Avatar option labels
+    'skin.porcelain': 'Porcelain',
+    'skin.sand': 'Sand',
+    'skin.golden': 'Golden',
+    'skin.caramel': 'Caramel',
+    'skin.umber': 'Umber',
+    'skin.espresso': 'Espresso',
+    'hairStyle.puff': 'Puff',
+    'hairStyle.locs': 'Locs',
+    'hairStyle.braids': 'Braids',
+    'hairStyle.afro': 'Afro',
+    'hairStyle.ponytail': 'Ponytail',
+    'hairStyle.short': 'Short',
+    'hairStyle.buzz': 'Buzz cut',
+    'hairStyle.long': 'Long',
+    'hairColor.black': 'Black',
+    'hairColor.darkbrown': 'Dark brown',
+    'hairColor.brown': 'Brown',
+    'hairColor.auburn': 'Auburn',
+    'hairColor.blonde': 'Blonde',
+    'hairColor.pink': 'Pink',
+    'hairColor.teal': 'Teal',
+    'outfit.explorer': 'Explorer',
+    'outfit.hoodie': 'Hoodie',
+    'outfit.jersey': 'Jersey',
+    'outfit.scholar': 'Scholar',
+    'color.crimson': 'Crimson',
+    'color.jungle': 'Jungle',
+    'color.ocean': 'Ocean',
+    'color.violet': 'Violet',
+    'color.sunset': 'Sunset',
+    'color.charcoal': 'Charcoal',
+    'accessory.none': 'None',
+    'accessory.glasses': 'Glasses',
+    'accessory.cap': 'Cap',
+    'accessory.headband': 'Headband',
+    'accessory.backpack': 'Backpack',
+
+    // Creatures
+    'creatureType.Sky': 'Sky',
+    'creatureType.Leaf': 'Leaf',
+    'creatureType.Glow': 'Glow',
+    'creatureType.Vine': 'Vine',
+    'creatureBlurb.lumacaw': 'A canopy parrot whose feathers glow brighter when you solve a problem.',
+    'creatureBlurb.fernpaw': 'A loyal jungle cub with fern ears. Fernpaws never give up on a puzzle.',
+    'creatureBlurb.glimmertoad': 'A river toad whose glowing spots light the way through tough problems.',
+    'creatureBlurb.coilvine': 'A clever vine serpent that loves patterns and equations.',
+
+    // Game page & settings
+    'game.title': '🌿 The Number Jungle',
+    'game.editCharacter': 'Edit character',
+    'game.help': 'Move with arrow keys / WASD or click the jungle. Answer with keys 1–4. Press Enter for the next step.',
+    'game.voiceOn': '🔊 Voice on',
+    'game.voiceOff': '🔇 Voice off',
+    'game.speed': 'Voice speed',
+    'game.speedSlow': 'Slow',
+    'game.speedNormal': 'Normal',
+    'game.aslOn': '🤟 ASL panel on',
+    'game.aslOff': '🤟 ASL panel off',
+    'game.aslTitle': 'ASL',
+    'game.aslMissing': 'ASL video coming soon',
+    'game.noVoice': 'No voice for this language on this device. Captions are on.',
+    'game.translating': 'Translating the jungle into {language}…',
+    'game.aiUnavailable': 'AI translation is not available right now, so the game is in English.',
+    'game.loading': 'Loading…',
+
+    // In-game HUD
+    'hud.level': '{name} · Lv {level}',
+    'hud.xp': '{xp} XP',
+    'hud.quest': 'Grades {band} · Creatures befriended: {done}/{total}',
+    'hud.offline': ' · offline mode',
+    'hud.online_one': '🟢 Online · {count} other explorer',
+    'hud.online_other': '🟢 Online · {count} other explorers',
+    'hud.solo': '⚪ Solo mode (server offline)',
+    'hud.full': '🟠 Jungle is full · solo mode',
+    'hud.connecting': '… Connecting',
+    'hud.crew': 'Crew XP {xp}/{goal}',
+    'player.you': '{name} (you)',
+    'toast.joined': '{name} joined the jungle!',
+    'toast.befriended': '{name} befriended a creature!',
+    'banner.crewGoal': '🎉 Crew goal reached! Everyone earned the Jungle Festival Badge!',
+    'mentor.name': 'Ms. Mae-Mae',
+    'creature.label': '{name} · {type} type',
+    'creature.befriended': '{name} befriended!',
+    'tries_one': '{count} try left',
+    'tries_other': '{count} tries left',
+    'next': 'Next ▶',
+    'answerCorrect': '✔ Correct',
+    'answerWrong': '✘ Not this one',
+
+    // Quest complete
+    'complete.title': '🏆 Quest Complete!',
+    'complete.quest': 'The Number Jungle',
+    'complete.xpQuestions': '+{xp} XP from questions',
+    'complete.xpBonus': '+{xp} XP quest bonus',
+    'complete.total': 'Total: {xp} XP · Level {level}',
+    'complete.creatures': 'Creatures befriended',
+    'complete.playAgain': 'Play again',
+    'item.goldenShield': 'Golden Shield',
+
+    // Screen reader layer
+    'a11y.region': 'Number Jungle tutoring',
+    'a11y.question': 'Question',
+    'a11y.choices': 'Answer choices',
+    'a11y.choice': 'Answer {n}: {label}',
+    'a11y.next': 'Next step',
+  },
+
+  // Ms. Mae-Mae's lines. Keys double as ASL video clip names.
+  mentor: {
+    welcome: "Hey {name}! Welcome to the Number Jungle. Each creature brings a challenge. Solve it to befriend them!",
+    appeared: 'A wild {creature} appeared!',
+    encourage1: 'Take your time and read it carefully.',
+    encourage2: "You've got this. I'm right here.",
+    encourage3: "What's the problem really asking? Start there.",
+    correct1: 'Yes! Nailed it!',
+    correct2: "That's exactly right!",
+    correct3: 'Look at you go!',
+    joinCrew: '{creature} wants to join your crew!',
+    correctAfterHelp: "You worked through it. That's how real learning happens! {creature} is impressed.",
+    wrongOpener: "Not quite. Let's slow down and walk through it together.",
+    tryAgainHints: 'Your turn. Use those hints and try again!',
+    tryAgainFull: "Now you've got it. Pick your answer!",
+    revealOpener: "That one was tough. Here's the full solution, step by step.",
+    revealAfter: "{creature} will be back later. Let's keep going. Every problem makes you stronger!",
+    complete: "You did it! I'm so proud of how you stuck with it. That's what real mathematicians do.",
+    stepPrefix: 'Step {n} of {total}:',
+  },
+
+  // Frustration-detector responses, by grade band and reason.
+  frustration: {
+    '6-8': {
+      repeated_wrong_attempts: [
+        "This one's tricky. Want to walk through it step by step with me?",
+        "Almost there. Let's break it into smaller pieces together.",
+        "Mistakes are just data. Let's figure out where it went sideways.",
+      ],
+      idle_timeout: [
+        "Still thinking? That's fine. Try writing down what you know first.",
+        "Take your time. What's the question actually asking for?",
+      ],
+      rapid_guessing: [
+        'Whoa, quick clicks! Slow down and read it one more time.',
+        "Guessing fast can trip you up. What's the first step here?",
+      ],
+    },
+    '9-12': {
+      repeated_wrong_attempts: [
+        "This one's a real challenge. Want me to show you the first step?",
+        "Let's check each step. Where does it start to feel off?",
+        "You're closer than you think. Let's rework it together.",
+      ],
+      idle_timeout: [
+        'Thinking it through is good. Want a nudge to get started?',
+        "Try plugging the answer choices back in. That's a legit strategy.",
+      ],
+      rapid_guessing: [
+        'Hold up. Read it once more and set up the equation first.',
+        'Speed is nice, but accuracy wins. What is the problem really asking?',
+      ],
+    },
+  },
+
+  questions: {},
+};

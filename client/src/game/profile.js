@@ -6,6 +6,8 @@ import { sanitizeAvatar } from '../art/avatarOptions';
 
 const KEY = 'msMaeMae.profile';
 
+export const DEFAULT_SETTINGS = { language: 'en', aiLanguage: '', voice: true, rate: 0.85, asl: false };
+
 export function loadProfile() {
   try {
     const raw = localStorage.getItem(KEY);
