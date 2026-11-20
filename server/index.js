@@ -12,8 +12,10 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+// Vite's dev server runs on 5173; 3000 is kept for older setups.
+const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'].filter(Boolean);
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:3000', methods: ['GET', 'POST'] }
+  cors: { origin: allowedOrigins, methods: ['GET', 'POST'] }
 });
 
 app.use(cors());

@@ -8,7 +8,7 @@ const QuestionSchema = new mongoose.Schema({
   },
   gradeBand: {
     type: String,
-    enum: ['prek-k', '1-2', '3-5'],
+    enum: ['6-8', '9-12'],
     required: true,
   },
   // 1 = easiest, 5 = hardest, within a gradeBand
@@ -27,8 +27,7 @@ const QuestionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // For tap-select: array of choice objects. Visual assets are jungle-themed
-  // (e.g. "3 monkeys" rendered as sprite count) rather than bare numerals for prek-k.
+  // For tap-select: array of choice objects.
   choices: [
     {
       label: String,       // display text or asset key
@@ -36,6 +35,12 @@ const QuestionSchema = new mongoose.Schema({
       isCorrect: Boolean,
     },
   ],
+  // Curriculum topic, e.g. 'Two-step equations'
+  topic: String,
+  // Ms. Mae-Mae's step-by-step walkthrough, shown after a wrong answer
+  steps: [String],
+  // Jungle creature that appears alongside the question
+  creature: String,
   // Free-form metadata for future interaction types (numeric-input, drag-match)
   meta: {
     type: mongoose.Schema.Types.Mixed,

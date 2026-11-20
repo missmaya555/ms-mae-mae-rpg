@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
@@ -12,7 +12,7 @@ export default function Login({ onLogin }) {
         style={{ margin: '8px', padding: '10px', borderRadius: '8px', border: 'none', width: '250px' }} />
       <input placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)}
         style={{ margin: '8px', padding: '10px', borderRadius: '8px', border: 'none', width: '250px' }} />
-      <button onClick={onLogin}
+      <button onClick={() => onLogin(username)}
         style={{ margin: '12px', padding: '12px 32px', borderRadius: '8px', background: '#e94560', color: '#fff', border: 'none', fontSize: '16px', cursor: 'pointer' }}>
         Let's Learn!
       </button>

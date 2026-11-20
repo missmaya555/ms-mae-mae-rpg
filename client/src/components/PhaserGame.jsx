@@ -1,24 +1,24 @@
 import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { createGameConfig } from '../game/gameConfig';
+import NumberJungleScene from '../scenes/NumberJungleScene';
 
-export default function PhaserGame({ sessionId, gradeBand }) {
+export default function PhaserGame({ sessionId, profile }) {
   const containerRef = useRef(null);
   const gameRef = useRef(null);
 
   useEffect(() => {
-    if (gameRef.current) return;
+    if (gameRef.current) return undefined;
 
-    const config = createGameConfig(containerRef.current);
-    gameRef.current = new Phaser.Game(config);
-
-    gameRef.current.scene.start('NumberJungleScene', { sessionId, gradeBand });
+    const game = new Phaser.Game(createGameConfig(containerRef.current));
+    game.scene.add('NumberJungleScene', NumberJungleScene, true, { sessionId, profile });
+    gameRef.current = game;
 
     return () => {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, [sessionId, gradeBand]);
+  }, [sessionId, profile]);
 
-  return <div ref={containerRef} />;
+  return <div ref={containerRef} style={{ width: 'min(960px, 100%)', aspectRatio: '960 / 600' }} />;
 }

@@ -1,14 +1,13 @@
 import Phaser from 'phaser';
-import NumberJungleScene from '../scenes/NumberJungleScene';
 
-export function createGameConfig(parentId) {
+// Scenes are added by PhaserGame so they start with the player's data.
+export function createGameConfig(parent) {
   return {
     type: Phaser.AUTO,
-    parent: parentId,
-    width: 800,
-    height: 500,
-    backgroundColor: '#1b4332',
-    scene: [NumberJungleScene],
+    parent,
+    width: 960,
+    height: 600,
+    backgroundColor: '#0c2e22',
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,

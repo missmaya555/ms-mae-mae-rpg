@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Login from './pages/Login';
-import CharacterSelect from './pages/CharacterSelect';
+import CharacterCreator from './pages/CharacterCreator';
 import Game from './pages/Game';
 
 export default function App() {
   const [screen, setScreen] = useState('login');
-  const [player, setPlayer] = useState(null);
+  const [username, setUsername] = useState('');
+  const [profile, setProfile] = useState(null);
 
   if (screen === 'login') {
-    return <Login onLogin={() => setScreen('characterSelect')} />;
+    return <Login onLogin={(name) => { setUsername(name || ''); setScreen('creator'); }} />;
   }
-  if (screen === 'characterSelect') {
-    return <CharacterSelect onSelect={(char) => { setPlayer(char); setScreen('game'); }} />;
+  if (screen === 'creator') {
+    return <CharacterCreator defaultName={username} onDone={(p) => { setProfile(p); setScreen('game'); }} />;
   }
-  return <Game player={player} />;
+  return <Game profile={profile} onEditCharacter={() => setScreen('creator')} />;
 }

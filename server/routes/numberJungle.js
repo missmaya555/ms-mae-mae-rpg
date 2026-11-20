@@ -1,86 +1,59 @@
 const express = require('express');
 const router = express.Router();
 const { getNextDifficulty } = require('../controllers/adaptiveEngine');
+const { QUESTION_BANK, GRADE_BANDS } = require('../data/numberJungleQuestions');
+
+// Correct answers needed to finish the quest.
+const QUESTS_TO_COMPLETE = 5;
+// XP rewards (kept from the original quest reward system).
+const XP_PER_QUESTION = 20;
+const QUEST_COMPLETE_BONUS_XP = 100;
+const QUEST_ITEM_REWARD = 'Golden Shield';
 
 const sessionState = new Map();
 
+function normalizeBand(gradeBand) {
+  return GRADE_BANDS.includes(gradeBand) ? gradeBand : '6-8';
+}
+
 function getOrCreateSession(sessionId, gradeBand) {
   if (!sessionState.has(sessionId)) {
-    sessionState.set(sessionId, { difficulty: 1, gradeBand, history: [] });
+    sessionState.set(sessionId, {
+      difficulty: 1,
+      gradeBand: normalizeBand(gradeBand),
+      history: [],
+      askedIds: new Set(),
+      correctCount: 0,
+      xp: 0,
+    });
   }
   return sessionState.get(sessionId);
 }
 
-const DEMO_QUESTIONS = {
-  '1-2': {
-    1: {
-      prompt: '🐒 3 monkeys + 2 monkeys = ?',
-      choices: [
-        { label: '4', isCorrect: false },
-        { label: '5', isCorrect: true },
-        { label: '6', isCorrect: false },
-      ],
-      steps: [
-        "You start with 3 monkeys swinging in the trees. 🐒🐒🐒",
-        "Now 2 more monkeys come to join them. Let's count them all together, one at a time: 4... 5!",
-        "So 3 monkeys plus 2 monkeys makes 5 monkeys in total. Let's try that one again — you've got this.",
-      ],
-    },
-    2: {
-      prompt: '🍌 7 bananas - 3 bananas = ?',
-      choices: [
-        { label: '3', isCorrect: false },
-        { label: '4', isCorrect: true },
-        { label: '5', isCorrect: false },
-      ],
-      steps: [
-        "You start with 7 bananas. 🍌🍌🍌🍌🍌🍌🍌",
-        "A hungry monkey grabs 3 of them and swings away. Let's take 3 away and count what's left: 6... 5... 4.",
-        "So 7 bananas minus 3 bananas leaves 4 bananas. Let's try that one again!",
-      ],
-    },
-    3: {
-      prompt: '🦜 4 parrots + 4 parrots = ?',
-      choices: [
-        { label: '7', isCorrect: false },
-        { label: '8', isCorrect: true },
-        { label: '9', isCorrect: false },
-      ],
-      steps: [
-        "You start with 4 colorful parrots on a branch. 🦜🦜🦜🦜",
-        "4 more parrots fly in to join them. Let's count everyone together: 5... 6... 7... 8!",
-        "So 4 parrots plus 4 parrots makes 8 parrots. Let's try that one again!",
-      ],
-    },
-    4: {
-      prompt: '🐍 12 snakes - 5 snakes = ?',
-      choices: [
-        { label: '6', isCorrect: false },
-        { label: '7', isCorrect: true },
-        { label: '8', isCorrect: false },
-      ],
-      steps: [
-        "You start with 12 snakes sunning on a rock. 🐍",
-        "5 of them slither off into the grass. Let's count down from 12 as they leave: 11... 10... 9... 8... 7.",
-        "So 12 snakes minus 5 snakes leaves 7 snakes. Let's try that one again!",
-      ],
-    },
-    5: {
-      prompt: '🌴 9 palm trees + 6 palm trees = ?',
-      choices: [
-        { label: '14', isCorrect: false },
-        { label: '15', isCorrect: true },
-        { label: '16', isCorrect: false },
-      ],
-      steps: [
-        "There are 9 palm trees along the river. 🌴",
-        "The jungle grows 6 more palm trees nearby. Let's count them all: 10... 11... 12... 13... 14... 15!",
-        "So 9 palm trees plus 6 palm trees makes 15 palm trees. Let's try that one again!",
-      ],
-    },
-  },
-};
+/**
+ * Pick a question the student hasn't seen yet. Prefer the current
+ * difficulty, then search outward (±1, ±2, ...) so a student never gets
+ * stuck repeating the same question.
+ */
+function pickQuestion(session) {
+  const bank = QUESTION_BANK[session.gradeBand];
+  const levels = Object.keys(bank).map(Number);
+  const maxOffset = Math.max(...levels);
 
+  for (let offset = 0; offset <= maxOffset; offset += 1) {
+    const candidates = [session.difficulty + offset, session.difficulty - offset];
+    for (const level of candidates) {
+      const pool = (bank[level] || []).filter((q) => !session.askedIds.has(q.id));
+      if (pool.length > 0) {
+        return { question: pool[Math.floor(Math.random() * pool.length)], level };
+      }
+    }
+  }
+  return null;
+}
+
+// Note: the full question (including which choice is correct) is sent so
+// the client can give instant feedback and Ms. Mae-Mae's walkthrough.
 router.get('/next', (req, res) => {
   const { sessionId, gradeBand } = req.query;
   if (!sessionId || !gradeBand) {
@@ -89,18 +62,22 @@ router.get('/next', (req, res) => {
 
   const session = getOrCreateSession(sessionId, gradeBand);
 
-  const correctCount = session.history.filter(h => h.correct).length;
-  if (correctCount >= 5) {
-    return res.json({ complete: true });
+  if (session.correctCount >= QUESTS_TO_COMPLETE) {
+    return res.json({ complete: true, ...rewardSummary(session) });
   }
 
-  const question = DEMO_QUESTIONS[gradeBand]?.[session.difficulty];
-
-  if (!question) {
-    return res.json({ complete: true });
+  const picked = pickQuestion(session);
+  if (!picked) {
+    return res.json({ complete: true, ...rewardSummary(session) });
   }
 
-  res.json({ question, difficulty: session.difficulty, complete: false });
+  session.askedIds.add(picked.question.id);
+  res.json({
+    question: picked.question,
+    difficulty: picked.level,
+    progress: { correct: session.correctCount, needed: QUESTS_TO_COMPLETE },
+    complete: false,
+  });
 });
 
 router.post('/answer', (req, res) => {
@@ -108,13 +85,40 @@ router.post('/answer', (req, res) => {
   if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
   const session = getOrCreateSession(sessionId, gradeBand);
-  session.history.unshift({ correct, attempts, timeMs });
+  session.history.unshift({
+    correct: Boolean(correct),
+    attempts: Number(attempts) || 1,
+    timeMs: Number(timeMs) || 0,
+  });
   session.history = session.history.slice(0, 10);
 
-  const nextDifficulty = getNextDifficulty(session.difficulty, session.history);
-  session.difficulty = nextDifficulty;
+  let xpEarned = 0;
+  if (correct) {
+    session.correctCount += 1;
+    xpEarned = XP_PER_QUESTION;
+    session.xp += xpEarned;
+  }
 
-  res.json({ nextDifficulty });
+  session.difficulty = getNextDifficulty(session.difficulty, session.history);
+
+  res.json({
+    nextDifficulty: session.difficulty,
+    xpEarned,
+    progress: { correct: session.correctCount, needed: QUESTS_TO_COMPLETE },
+  });
 });
 
+function rewardSummary(session) {
+  return {
+    rewards: {
+      xp: session.xp + QUEST_COMPLETE_BONUS_XP,
+      bonusXp: QUEST_COMPLETE_BONUS_XP,
+      item: QUEST_ITEM_REWARD,
+    },
+  };
+}
+
 module.exports = router;
+module.exports.XP_PER_QUESTION = XP_PER_QUESTION;
+module.exports.QUEST_COMPLETE_BONUS_XP = QUEST_COMPLETE_BONUS_XP;
+module.exports.QUEST_ITEM_REWARD = QUEST_ITEM_REWARD;
