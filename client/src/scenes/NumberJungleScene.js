@@ -295,6 +295,22 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.game.events.on('a11y:next', this.onExternalNext);
     this.game.events.on('a11y:move', this.onExternalMove);
     this.game.events.on('companion:evolved', this.onEvolvedEvent);
+    this.onChallengeStart = () => this.startChallenge();
+    this.game.events.on('challenge:start', this.onChallengeStart);
+    // Coming back from a Jungle Challenge: pick up new XP and coins.
+    this.events.on('resume', () => {
+      this.startXp = loadProfile()?.xp || 0;
+      this.updateHud();
+      this.emitA11y();
+    });
+  }
+
+  /** Pause the jungle and open a Jungle Challenge on top of it. */
+  startChallenge() {
+    if (!this.sys.isActive() || this.scene.isActive('ChallengeScene')) return;
+    stopSpeaking();
+    this.scene.pause();
+    this.scene.launch('ChallengeScene', { gradeBand: this.gradeBand });
   }
 
   update(time, delta) {
@@ -511,10 +527,10 @@ export default class NumberJungleScene extends Phaser.Scene {
     const intoLevel = totalXp % 100;
 
     this.hudName.setText(t('hud.level', { name: this.playerName, level }));
-    this.hudXpText.setText(t('hud.xp', { xp: totalXp }));
+    this.hudXpText.setText(`${t('hud.xp', { xp: totalXp })}  ${t('hud.coins', { coins: loadProfile()?.coins || 0 })}`);
     this.hudXpBar.clear();
-    this.hudXpBar.fillStyle(0x1b1b1b, 0.9).fillRoundedRect(190, 20, 170, 10, 5);
-    this.hudXpBar.fillStyle(0xffd60a, 1).fillRoundedRect(190, 20, Math.max(6, 170 * (intoLevel / 100)), 10, 5);
+    this.hudXpBar.fillStyle(0x1b1b1b, 0.9).fillRoundedRect(180, 20, 130, 10, 5);
+    this.hudXpBar.fillStyle(0xffd60a, 1).fillRoundedRect(180, 20, Math.max(6, 130 * (intoLevel / 100)), 10, 5);
 
     this.hudQuest.setText(
       t('hud.quest', { band: this.gradeBand, done: this.correctCount, total: CORRECT_NEEDED })
@@ -648,7 +664,7 @@ export default class NumberJungleScene extends Phaser.Scene {
   }
 
   pressNext() {
-    if (this.dialogOpen()) return;
+    if (this.dialogOpen() || !this.sys.isActive()) return;
     this.nextResolver?.();
   }
 
@@ -762,7 +778,7 @@ export default class NumberJungleScene extends Phaser.Scene {
 
   /** Use a companion move on the current question. */
   async useMove(i) {
-    if (this.dialogOpen()) return;
+    if (this.dialogOpen() || !this.sys.isActive()) return;
     const move = this.moves[i];
     if (!move || move.left <= 0 || this.locked || !this.question) return;
 
@@ -922,7 +938,7 @@ export default class NumberJungleScene extends Phaser.Scene {
   }
 
   answerByIndex(i) {
-    if (this.dialogOpen()) return;
+    if (this.dialogOpen() || !this.sys.isActive()) return;
     const button = this.choiceButtons[i];
     if (button) this.handleAnswer(button);
   }
@@ -1187,8 +1203,12 @@ export default class NumberJungleScene extends Phaser.Scene {
       add(this.add.text(x, 450, CREATURES[id].name, { fontFamily: FONT, fontSize: '13px', color: '#ffffff' }).setOrigin(0.5, 0));
     });
 
-    const btn = add(this.add.rectangle(W / 2, 500, 220, 44, 0xe94560).setInteractive({ useHandCursor: true }));
-    add(this.add.text(W / 2, 500, t('complete.playAgain'), { fontFamily: FONT, fontSize: '19px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
+    const challengeBtn = add(this.add.rectangle(W / 2 + 120, 500, 220, 44, 0x3a1f5c).setStrokeStyle(2, 0xffd60a)
+      .setInteractive({ useHandCursor: true }));
+    add(this.add.text(W / 2 + 120, 500, t('challenge.button'), { fontFamily: FONT, fontSize: '16px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
+    challengeBtn.on('pointerdown', () => this.startChallenge());
+    const btn = add(this.add.rectangle(W / 2 - 120, 500, 220, 44, 0xe94560).setInteractive({ useHandCursor: true }));
+    add(this.add.text(W / 2 - 120, 500, t('complete.playAgain'), { fontFamily: FONT, fontSize: '19px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
     const playAgain = () => {
       this.scene.restart({
         sessionId: `${this.playerName}-${Date.now()}`,
@@ -1268,6 +1288,7 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.game.events.off('a11y:next', this.onExternalNext);
     this.game.events.off('a11y:move', this.onExternalMove);
     this.game.events.off('companion:evolved', this.onEvolvedEvent);
+    this.game.events.off('challenge:start', this.onChallengeStart);
     this.mp?.disconnect();
     this.mp = null;
     this.remotePlayers.clear();

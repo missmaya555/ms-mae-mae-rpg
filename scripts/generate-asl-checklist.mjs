@@ -33,6 +33,13 @@ for (const [key, when] of Object.entries(mentorKeys)) {
     : en.mentor[key];
   rows.push([`mentor.${key}.mp4`, when, line]);
 }
+for (const [key, when] of Object.entries({
+  intro: 'Jungle Challenge starts',
+  win: 'Jungle Challenge won',
+  lose: 'Jungle Challenge lost',
+})) {
+  rows.push([`challenge.${key}.mp4`, when, en.ui[`challenge.${key}`].replace('{guardian}', '[guardian name]').replace('{name}', '[companion name]')]);
+}
 for (const reason of ['repeated_wrong_attempts', 'idle_timeout', 'rapid_guessing']) {
   rows.push([`mentor.${reason}.mp4`, `Frustration detector: ${reason.replace(/_/g, ' ')}`, en.frustration['6-8'][reason][0]]);
 }

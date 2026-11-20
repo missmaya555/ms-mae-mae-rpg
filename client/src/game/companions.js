@@ -25,10 +25,26 @@ export const EVOLUTION_RULES = {
   3: { level: 6, potion: 'mega' },
 };
 
+/**
+ * Potions. More become available in the Jungle Shop as students level up
+ * (unlockLevel). Prices are in Jungle Coins.
+ *   healing — restores companion energy during a Jungle Challenge
+ *   power   — the next correct answer in a challenge hits twice as hard
+ *   growth / mega — let the companion grow to stage 2 / stage 3
+ */
 export const POTIONS = {
-  growth: { id: 'growth', icon: '🧪', color: '#80ffdb' },
-  mega: { id: 'mega', icon: '⚗️', color: '#ffd60a' },
+  healing: { id: 'healing', icon: '💚', color: '#95d5b2', unlockLevel: 1, price: 20 },
+  growth: { id: 'growth', icon: '🧪', color: '#80ffdb', unlockLevel: 2, price: 60 },
+  power: { id: 'power', icon: '🔥', color: '#f4a261', unlockLevel: 3, price: 35 },
+  mega: { id: 'mega', icon: '⚗️', color: '#ffd60a', unlockLevel: 5, price: 120 },
 };
+
+export const HEALING_AMOUNT = 30;
+
+/** Potions a student can buy or win at their level. */
+export function unlockedPotions(level) {
+  return Object.values(POTIONS).filter((p) => level >= p.unlockLevel);
+}
 
 export const COMPANION_LINES = {
   glimmertoad: {

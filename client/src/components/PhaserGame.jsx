@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { createGameConfig } from '../game/gameConfig';
 import NumberJungleScene from '../scenes/NumberJungleScene';
+import ChallengeScene from '../scenes/ChallengeScene';
 
 export default function PhaserGame({ sessionId, profile, settings, onReady }) {
   const containerRef = useRef(null);
@@ -24,6 +25,7 @@ export default function PhaserGame({ sessionId, profile, settings, onReady }) {
     const game = new Phaser.Game(createGameConfig(containerRef.current));
     game.registry.set('settings', settingsRef.current);
     game.scene.add('NumberJungleScene', NumberJungleScene, true, { sessionId, profile });
+    game.scene.add('ChallengeScene', ChallengeScene, false);
     gameRef.current = game;
     onReadyRef.current?.(game);
 

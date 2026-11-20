@@ -3,6 +3,7 @@ import PhaserGame from '../components/PhaserGame';
 import AccessibleLayer from '../components/AccessibleLayer';
 import AslPanel from '../components/AslPanel';
 import CompanionPanel from '../components/CompanionPanel';
+import ShopPanel from '../components/ShopPanel';
 import { setLanguage, t, currentLanguage } from '../i18n';
 import { hasVoice, stopSpeaking } from '../voice/speech';
 import { saveProfile, DEFAULT_SETTINGS } from '../game/profile';
@@ -15,6 +16,7 @@ export default function Game({ profile, onEditCharacter }) {
   const [notice, setNotice] = useState('');
   const [game, setGame] = useState(null);
   const [showCompanion, setShowCompanion] = useState(false);
+  const [showShop, setShowShop] = useState(false);
 
   // Load the language (AI languages are translated here, before the game starts).
   useEffect(() => {
@@ -55,6 +57,8 @@ export default function Game({ profile, onEditCharacter }) {
         <h1 style={{ margin: 0, fontSize: 22 }}>{t('game.title')}</h1>
         <button type="button" onClick={onEditCharacter} style={btn}>{t('game.editCharacter')}</button>
         <button type="button" onClick={() => setShowCompanion(true)} style={{ ...btn, borderColor: '#ffd60a' }}>{t('companion.button')}</button>
+        <button type="button" onClick={() => game?.events.emit('challenge:start')} style={{ ...btn, borderColor: '#e94560' }}>{t('challenge.button')}</button>
+        <button type="button" onClick={() => setShowShop(true)} style={{ ...btn, borderColor: '#ffd60a' }}>{t('shop.button')}</button>
         <button type="button" onClick={() => update({ voice: !settings.voice })} style={btn} aria-pressed={settings.voice}>
           {settings.voice ? t('game.voiceOn') : t('game.voiceOff')}
         </button>
@@ -76,6 +80,7 @@ export default function Game({ profile, onEditCharacter }) {
         {settings.asl && <AslPanel game={game} />}
       </div>
       <AccessibleLayer game={game} />
+      {showShop && <ShopPanel onClose={() => setShowShop(false)} />}
       {showCompanion && (
         <CompanionPanel
           settings={settings}

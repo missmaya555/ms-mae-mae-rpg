@@ -60,6 +60,8 @@ export default class VisualBoard {
   }
 
   hide() {
+    // Stop any running animations first so nothing updates a destroyed object.
+    this.scene.tweens.killTweensOf(this.objects);
     this.objects.forEach((o) => o.destroy());
     this.objects = [];
     this.layer = [];
@@ -216,14 +218,17 @@ export default class VisualBoard {
       tweens: tweens.map((tw) => ({
         ...tw,
         onStart: () => {
+          if (!this.companion?.active) return;
           this.scene.tweens.add({ targets: this.companion, y: this.nl.y - 28, duration: 130, yoyo: true, ease: 'Quad.easeOut' });
         },
         onComplete: () => {
+          if (!counter.active || !this.companion?.active) return;
           count += 1;
           counter.setText(`${dir > 0 ? '+' : '−'}${count}`).setX(this.companion.x);
         },
       })),
       onComplete: () => {
+        if (!counter.active) return;
         if (this.spec.marks || isLast) mark(target, isLast ? GOLD : MINT);
         this.scene.tweens.add({ targets: counter, alpha: 0, delay: 600, duration: 400 });
       },

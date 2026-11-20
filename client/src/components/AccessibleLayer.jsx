@@ -60,7 +60,16 @@ export default function AccessibleLayer({ game }) {
               onClick={() => game?.events.emit('a11y:move', i)}
               style={buttonStyle}
             >
-              ⚡ {m.name} ({t('move.usesLeft', { count: m.left })}): {m.desc}
+              ⚡ {m.name} ({t('move.usesLeft', { n: m.left })}): {m.desc}
+            </button>
+          ))}
+        </div>
+      )}
+      {state.items?.length > 0 && (
+        <div role="group" aria-label={t('challenge.bag')} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+          {state.items.map((item) => (
+            <button key={item.id} type="button" onClick={() => game?.events.emit('a11y:item', item.id)} style={buttonStyle}>
+              {item.label}
             </button>
           ))}
         </div>

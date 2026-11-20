@@ -7,7 +7,7 @@ American Sign Language video. Until a clip exists, the panel shows
 
 ## What to record
 
-`docs/asl-clips.csv` lists every clip (132 right now) with:
+`docs/asl-clips.csv` lists every clip (135 right now) with:
 
 - `clip_file`: the exact file name to save
 - `when_it_plays`: when the game shows it

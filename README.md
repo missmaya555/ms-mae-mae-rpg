@@ -32,8 +32,9 @@ Think:
 | Ms. Mae-Mae's voice (text-to-speech in the chosen language) | ✅ Playable |
 | Accessibility: screen reader layer, keyboard play, captions, ASL video panel | ✅ Playable (ASL clips to be recorded) |
 | Companions that grow (3 stages), potions & math moves | ✅ Playable |
+| Jungle Challenges (turn-based math vs. Jungle Guardians) | ✅ Playable |
+| Reward choice (points, coins, potions) & Jungle Shop | ✅ Playable |
 | Ms. Mae-Mae LLM mentor | 🔧 In Progress |
-| Turn-based battle system | 📋 Planned |
 | Student dashboard | 📋 Planned |
 | Teacher/admin panel | 📋 Planned |
 
@@ -141,6 +142,20 @@ Every jungle companion starts as a baby and grows up through three stages as the
 - **Math moves** (keys **Z / X / C** or the move buttons): cross out wrong answers, protect your next try, get a free hint step, or watch the math animation before answering. Each move has limited uses per quest. Moves never give away the final step.
 - **Research data:** which moves a student used on each question is sent with the answer log (`movesUsed`), so help-seeking can be studied alongside correctness, attempts and time.
 - Definitions live in `client/src/game/companions.js`; baby and middle-form art is in `client/src/art/babyForms.js`.
+
+---
+
+## ⚔️ Jungle Challenges, rewards & shop
+
+Open a challenge with **⚔️ Jungle Challenge** (top of the game, or from the quest-complete card).
+
+- A **Jungle Guardian** (a grown creature matched to the student's level) asks math questions from the student's grade band, one per round.
+- **Right answer:** the companion strikes; later growth stages hit harder, and a **Power Potion** doubles the next hit.
+- **Wrong answer:** the Guardian strikes back, and Ms. Mae-Mae shows the answer, the key step and the math animation, so every miss is still a learning moment.
+- Companion **math moves** (Z / X / C) and the **bag** (H = Healing Potion, P = Power Potion) work during challenges.
+- **Win:** the student **chooses a reward: Points (XP), Jungle Coins, or a Potion**. **Lose:** a small XP reward for trying, and they can try again.
+- **🛒 Jungle Shop:** spend coins on potions. More potions unlock as students level up: Healing (level 1), Growth (level 2), Power (level 3), Mega Growth (level 5).
+- Code: `client/src/scenes/ChallengeScene.js`, `client/src/components/ShopPanel.jsx`, potion data in `client/src/game/companions.js`.
 
 ---
 
