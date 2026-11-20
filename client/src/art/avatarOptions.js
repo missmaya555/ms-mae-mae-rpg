@@ -66,6 +66,7 @@ export const DEFAULT_AVATAR = {
   outfitColor: 'jungle',
   accessory: 'none',
   companion: 'fernpaw',
+  companionStage: 1,
 };
 
 const ALLOWED = {
@@ -76,6 +77,7 @@ const ALLOWED = {
   outfitColor: Object.keys(OUTFIT_COLORS),
   accessory: Object.keys(ACCESSORIES),
   companion: ['lumacaw', 'fernpaw', 'glimmertoad', 'coilvine'],
+  companionStage: [1, 2, 3],
 };
 
 /** Only ever render known values, even for avatars received from other players. */
@@ -97,4 +99,5 @@ export const MS_MAE_MAE_AVATAR = {
   outfitColor: 'crimson',
   accessory: 'glasses',
   companion: 'lumacaw',
+  companionStage: 3,
 };

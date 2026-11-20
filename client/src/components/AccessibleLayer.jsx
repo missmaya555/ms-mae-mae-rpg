@@ -7,7 +7,7 @@ import { t } from '../i18n';
  * hidden until something inside it gets keyboard focus.
  */
 export default function AccessibleLayer({ game }) {
-  const [state, setState] = useState({ mentor: '', prompt: '', topic: '', choices: [], canNext: false });
+  const [state, setState] = useState({ mentor: '', prompt: '', topic: '', choices: [], canNext: false, moves: [] });
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
@@ -44,11 +44,26 @@ export default function AccessibleLayer({ game }) {
               >
                 {t('a11y.choice', { n: i + 1, label: c.label })}
                 {c.state === 'correct' ? ` — ${t('answerCorrect')}` : ''}
-                {c.state === 'wrong' ? ` — ${t('answerWrong')}` : ''}
+                {c.state === 'wrong' || c.state === 'eliminated' ? ` — ${t('answerWrong')}` : ''}
               </button>
             ))}
           </div>
         </>
+      )}
+      {state.moves?.length > 0 && (
+        <div role="group" aria-label={t('companion.moves')} style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+          {state.moves.map((m, i) => (
+            <button
+              key={m.name}
+              type="button"
+              disabled={m.left <= 0}
+              onClick={() => game?.events.emit('a11y:move', i)}
+              style={buttonStyle}
+            >
+              ⚡ {m.name} ({t('move.usesLeft', { count: m.left })}): {m.desc}
+            </button>
+          ))}
+        </div>
       )}
       {state.canNext && (
         <button type="button" onClick={() => game?.events.emit('a11y:next')} style={{ ...buttonStyle, marginTop: 8 }}>

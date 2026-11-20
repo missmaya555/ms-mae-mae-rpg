@@ -31,6 +31,7 @@ export function connectJungle(me, handlers = {}) {
   socket.on('jungle:player-solved', (p) => handlers.onSolved?.(p));
   socket.on('jungle:crew-goal', (p) => handlers.onCrewGoal?.(p));
   socket.on('jungle:emote', (p) => handlers.onEmote?.(p));
+  socket.on('jungle:player-avatar', (p) => handlers.onAvatar?.(p));
   socket.on('jungle:full', () => handlers.onStatus?.('full'));
 
   function sendMove() {
@@ -61,6 +62,10 @@ export function connectJungle(me, handlers = {}) {
     },
     emote(emote) {
       socket.emit('jungle:emote', { emote });
+    },
+    updateAvatar(avatar) {
+      me.avatar = avatar;
+      socket.emit('jungle:avatar', { avatar });
     },
     disconnect() {
       clearTimeout(moveTimer);

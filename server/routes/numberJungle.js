@@ -81,7 +81,7 @@ router.get('/next', (req, res) => {
 });
 
 router.post('/answer', (req, res) => {
-  const { sessionId, gradeBand, correct, attempts, timeMs } = req.body;
+  const { sessionId, gradeBand, correct, attempts, timeMs, movesUsed } = req.body;
   if (!sessionId) return res.status(400).json({ error: 'sessionId is required' });
 
   const session = getOrCreateSession(sessionId, gradeBand);
@@ -89,6 +89,8 @@ router.post('/answer', (req, res) => {
     correct: Boolean(correct),
     attempts: Number(attempts) || 1,
     timeMs: Number(timeMs) || 0,
+    // Companion moves used on this question (for research on help-seeking).
+    movesUsed: Array.isArray(movesUsed) ? movesUsed.slice(0, 5).map(String) : [],
   });
   session.history = session.history.slice(0, 10);
 

@@ -14,6 +14,7 @@ const AVATAR_OPTIONS = {
   outfitColor: ['crimson', 'jungle', 'ocean', 'violet', 'sunset', 'charcoal'],
   accessory: ['none', 'glasses', 'cap', 'headband', 'backpack'],
   companion: ['lumacaw', 'fernpaw', 'glimmertoad', 'coilvine'],
+  companionStage: [1, 2, 3],
 };
 
 const DEFAULT_AVATAR = {
@@ -24,6 +25,7 @@ const DEFAULT_AVATAR = {
   outfitColor: 'jungle',
   accessory: 'none',
   companion: 'fernpaw',
+  companionStage: 1,
 };
 
 function sanitizeAvatar(input) {

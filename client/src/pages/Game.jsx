@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import PhaserGame from '../components/PhaserGame';
 import AccessibleLayer from '../components/AccessibleLayer';
 import AslPanel from '../components/AslPanel';
+import CompanionPanel from '../components/CompanionPanel';
 import { setLanguage, t, currentLanguage } from '../i18n';
 import { hasVoice, stopSpeaking } from '../voice/speech';
 import { saveProfile, DEFAULT_SETTINGS } from '../game/profile';
@@ -13,6 +14,7 @@ export default function Game({ profile, onEditCharacter }) {
   const [langReady, setLangReady] = useState(false);
   const [notice, setNotice] = useState('');
   const [game, setGame] = useState(null);
+  const [showCompanion, setShowCompanion] = useState(false);
 
   // Load the language (AI languages are translated here, before the game starts).
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function Game({ profile, onEditCharacter }) {
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 22 }}>{t('game.title')}</h1>
         <button type="button" onClick={onEditCharacter} style={btn}>{t('game.editCharacter')}</button>
+        <button type="button" onClick={() => setShowCompanion(true)} style={{ ...btn, borderColor: '#ffd60a' }}>{t('companion.button')}</button>
         <button type="button" onClick={() => update({ voice: !settings.voice })} style={btn} aria-pressed={settings.voice}>
           {settings.voice ? t('game.voiceOn') : t('game.voiceOff')}
         </button>
@@ -73,6 +76,13 @@ export default function Game({ profile, onEditCharacter }) {
         {settings.asl && <AslPanel game={game} />}
       </div>
       <AccessibleLayer game={game} />
+      {showCompanion && (
+        <CompanionPanel
+          settings={settings}
+          onClose={() => setShowCompanion(false)}
+          onEvolved={(p) => game?.events.emit('companion:evolved', p.avatar)}
+        />
+      )}
       <p style={{ margin: 0, opacity: 0.7, fontSize: 13, textAlign: 'center' }}>{t('game.help')}</p>
     </div>
   );

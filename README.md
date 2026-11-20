@@ -31,6 +31,7 @@ Think:
 | 8 built-in languages + any language via AI | ✅ Playable |
 | Ms. Mae-Mae's voice (text-to-speech in the chosen language) | ✅ Playable |
 | Accessibility: screen reader layer, keyboard play, captions, ASL video panel | ✅ Playable (ASL clips to be recorded) |
+| Companion evolution (3 stages), potions & math moves | ✅ Playable |
 | Ms. Mae-Mae LLM mentor | 🔧 In Progress |
 | Turn-based battle system | 📋 Planned |
 | Student dashboard | 📋 Planned |
@@ -121,6 +122,25 @@ cd client && npm run dev
 Open the game at `http://localhost:5173` (the API runs on `http://localhost:5000`). To try multiplayer, open the game in two browser windows and pick the same grade band.
 
 If the server isn't running, the game still works in solo mode with built-in offline questions.
+
+---
+
+## 🐾 Companions: evolution & math moves
+
+Every jungle companion starts as a baby and evolves, Pokémon-style, but math edition:
+
+| Line | Stage 1 | Stage 2 | Stage 3 | Math moves (one learned per stage) |
+|---|---|---|---|---|
+| Glow | Tadglow | Glimmerlet | Glimmertoad | Glow Eliminate · Number Line Leap · Lumen Burst |
+| Vine | Vineworm | Coilsprout | Coilvine | Pattern Sense · Equation Wrap · Infinity Coil |
+| Leaf | Sproutpaw | Fernling | Fernpaw | Second Sprout · Factor Fang · Evergreen Guard |
+| Sky | Lumachick | Lumafledge | Lumacaw | Hint Beam · Ratio Radar · Solar Solve |
+
+- **Potions:** leveling up earns a **Growth Potion** (levels 2–4) or a **Mega Growth Potion** (level 5+).
+- **Evolving:** open **🐾 My Companion**. Stage 2 needs level 3 + a Growth Potion; stage 3 needs level 6 + a Mega Growth Potion. Evolution plays a classic flicker-and-flash sequence, and the companion learns a new move.
+- **Math moves** (keys **Z / X / C** or the move buttons): cross out wrong answers, protect your next try, get a free hint step, or watch the math animation before answering. Each move has limited uses per quest. Moves never give away the final step.
+- **Research data:** which moves a student used on each question is sent with the answer log (`movesUsed`), so help-seeking can be studied alongside correctness, attempts and time.
+- Definitions live in `client/src/game/companions.js`; baby and middle-form art is in `client/src/art/babyForms.js`.
 
 ---
 

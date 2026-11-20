@@ -14,6 +14,9 @@
  * finish speaking (or a long reading time) and the student can press
  * "Next ▶" / Enter to continue sooner.
  *
+ * Companions evolve (see game/companions.js) and know math moves that help
+ * with a question: keys Z / X / C or the move buttons above the panel.
+ *
  * Accessibility: answer with keys 1–4, Enter for next; the React page
  * mirrors everything into a screen-reader layer ('a11y:update' events) and
  * an ASL video panel ('asl:clip' events).
@@ -35,6 +38,9 @@ import { t, mentor, currentLanguage, localizeQuestionAsync } from '../i18n';
 import { speak, stopSpeaking } from '../voice/speech';
 import VisualBoard from '../visuals/VisualBoard';
 import { QUESTION_VISUALS } from '../visuals/questionVisuals';
+import {
+  companionForm, companionTextureKey, knownMoves, nextEvolution, POTIONS,
+} from '../game/companions';
 
 const W = 960;
 const PANEL_Y = 300;
@@ -102,13 +108,19 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.target = null;
     this.textureQueue = Promise.resolve();
     this.detector = new FrustrationDetector();
-    this.a11y = { mentor: '', prompt: '', topic: '', choices: [], canNext: false };
+    this.a11y = { mentor: '', prompt: '', topic: '', choices: [], canNext: false, moves: [] };
+    this.moves = [];
+    this.shield = 0;
+    this.misses = 0;
+    this.questionMoves = [];
+    this.movesUsed = [];
   }
 
   preload() {
     const svgs = [
       { key: avatarKey(this.avatar), svg: avatarSvg(this.avatar), ...AVATAR_TEX },
       { key: avatarKey(MS_MAE_MAE_AVATAR), svg: avatarSvg(MS_MAE_MAE_AVATAR), ...AVATAR_TEX },
+      this.companionTexture(this.avatar),
       ...Object.values(CREATURES).map((c) => ({ key: creatureKey(c.id), svg: c.svg, ...CREATURE_TEX })),
     ];
     svgs.forEach(({ key, svg, width, height }) => {
@@ -123,6 +135,7 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.createHud();
     this.createPanel();
     this.createEmoteButtons();
+    this.resetMoves();
     this.setupInput();
     this.setupExternalControls();
     this.connectMultiplayer();
@@ -220,7 +233,7 @@ export default class NumberJungleScene extends Phaser.Scene {
 
   makeExplorer(x, y, avatar, name, isMe) {
     const sprite = this.add.image(x, y, avatarKey(avatar)).setOrigin(0.5, 1).setScale(AVATAR_SCALE);
-    const companion = this.add.image(x - 42, y, creatureKey(avatar.companion))
+    const companion = this.add.image(x - 42, y, companionTextureKey(avatar.companion, avatar.companionStage))
       .setOrigin(0.5, 1).setScale(COMPANION_SCALE);
     const label = this.add.text(x, y - 102, isMe ? t('player.you', { name }) : name, {
       fontFamily: FONT, fontSize: '13px', color: isMe ? '#ffd60a' : '#ffffff',
@@ -257,6 +270,7 @@ export default class NumberJungleScene extends Phaser.Scene {
       this.input.keyboard.on(`keydown-${name}`, () => this.answerByIndex(i));
       this.input.keyboard.on(`keydown-NUMPAD_${name}`, () => this.answerByIndex(i));
     });
+    ['Z', 'X', 'C'].forEach((name, i) => this.input.keyboard.on(`keydown-${name}`, () => this.useMove(i)));
     this.input.keyboard.on('keydown-ENTER', () => this.pressNext());
     this.input.keyboard.on('keydown-SPACE', () => this.pressNext());
 
@@ -275,8 +289,12 @@ export default class NumberJungleScene extends Phaser.Scene {
   setupExternalControls() {
     this.onExternalAnswer = (i) => this.answerByIndex(i);
     this.onExternalNext = () => this.pressNext();
+    this.onExternalMove = (i) => this.useMove(i);
+    this.onEvolvedEvent = (avatar) => this.onCompanionEvolved(avatar);
     this.game.events.on('a11y:answer', this.onExternalAnswer);
     this.game.events.on('a11y:next', this.onExternalNext);
+    this.game.events.on('a11y:move', this.onExternalMove);
+    this.game.events.on('companion:evolved', this.onEvolvedEvent);
   }
 
   update(time, delta) {
@@ -375,6 +393,16 @@ export default class NumberJungleScene extends Phaser.Scene {
           addRewards({ item: 'Jungle Festival Badge' });
           this.banner(t('banner.crewGoal'));
         },
+        onAvatar: ({ id, avatar }) => {
+          const remote = this.remotePlayers.get(id);
+          if (!remote?.explorer) return;
+          const clean = sanitizeAvatar(avatar);
+          this.ensureTextures([{ key: avatarKey(clean), svg: avatarSvg(clean), ...AVATAR_TEX }, this.companionTexture(clean)]).then(() => {
+            if (!remote.explorer) return;
+            remote.explorer.sprite.setTexture(avatarKey(clean));
+            remote.explorer.companion.setTexture(companionTextureKey(clean.companion, clean.companionStage));
+          });
+        },
         onEmote: ({ id, emote }) => {
           const explorer = id === this.mp?.id ? this.player : this.remotePlayers.get(id)?.explorer;
           if (explorer && EMOTES[emote]) this.showEmote(explorer, EMOTES[emote]);
@@ -390,9 +418,29 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.remotePlayers.set(p.id, remote);
     this.updateHud();
 
-    this.ensureTextures([{ key: avatarKey(avatar), svg: avatarSvg(avatar), ...AVATAR_TEX }]).then(() => {
+    this.ensureTextures([{ key: avatarKey(avatar), svg: avatarSvg(avatar), ...AVATAR_TEX }, this.companionTexture(avatar)]).then(() => {
       if (!this.sys.isActive() || this.remotePlayers.get(p.id) !== remote) return;
       remote.explorer = this.makeExplorer(remote.x, remote.y, avatar, p.name, false);
+    });
+  }
+
+  companionTexture(avatar) {
+    const form = companionForm(avatar.companion, avatar.companionStage);
+    return { key: companionTextureKey(avatar.companion, avatar.companionStage), svg: form.svg, ...CREATURE_TEX };
+  }
+
+  /** The player's companion evolved (from the My Companion screen). */
+  onCompanionEvolved(newAvatar) {
+    this.avatar = sanitizeAvatar(newAvatar);
+    this.ensureTextures([this.companionTexture(this.avatar)]).then(() => {
+      if (!this.sys.isActive()) return;
+      const c = this.player.companion;
+      c.setTexture(companionTextureKey(this.avatar.companion, this.avatar.companionStage));
+      this.sparkle(c.x, c.y - 30);
+      this.tweens.add({ targets: c, y: c.y - 30, duration: 220, yoyo: true, repeat: 2 });
+      this.mp?.updateAvatar(this.avatar);
+      // Keep uses already spent this quest; add any newly learned move.
+      this.resetMoves(true);
     });
   }
 
@@ -600,6 +648,7 @@ export default class NumberJungleScene extends Phaser.Scene {
   }
 
   pressNext() {
+    if (this.dialogOpen()) return;
     this.nextResolver?.();
   }
 
@@ -660,6 +709,119 @@ export default class NumberJungleScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------------
+  // Companion math moves
+  // ------------------------------------------------------------------
+
+  /** Load the moves the companion knows. Uses reset each quest. */
+  resetMoves(keepUses = false) {
+    const previous = new Map(this.moves.map((m) => [m.id, m.left]));
+    this.moves = knownMoves(this.avatar.companion, this.avatar.companionStage).map((m) => ({
+      ...m,
+      left: keepUses && previous.has(m.id) ? previous.get(m.id) : m.uses,
+    }));
+    this.createMoveButtons();
+  }
+
+  createMoveButtons() {
+    (this.moveButtons || []).forEach(({ bg, label }) => { bg.destroy(); label.destroy(); });
+    this.moveButtons = this.moves.map((move, i) => {
+      const x = 20 + i * 186;
+      const y = 262;
+      const bg = this.add.rectangle(x, y, 178, 30, 0x3a1f5c, 0.9).setOrigin(0, 0)
+        .setStrokeStyle(2, 0xffd60a, 0.9).setDepth(1000).setInteractive({ useHandCursor: true });
+      const label = this.add.text(x + 8, y + 15, '', {
+        fontFamily: FONT, fontSize: '13px', color: '#ffffff', fontStyle: 'bold',
+      }).setOrigin(0, 0.5).setDepth(1001);
+      bg.on('pointerdown', () => this.useMove(i));
+      bg.on('pointerover', () => this.toastOnce(t(`moveDesc.${move.desc}`)));
+      return { bg, label };
+    });
+    this.updateMoveButtons();
+  }
+
+  updateMoveButtons() {
+    const keys = ['Z', 'X', 'C'];
+    this.moves.forEach((move, i) => {
+      const button = this.moveButtons?.[i];
+      if (!button) return;
+      const usable = move.left > 0;
+      button.label.setText(`${keys[i]} ⚡ ${move.name} ×${move.left}`);
+      button.bg.setFillStyle(usable ? 0x3a1f5c : 0x2a2a2a, 0.9).setStrokeStyle(2, usable ? 0xffd60a : 0x666666, 0.9);
+      button.label.setAlpha(usable ? 1 : 0.5);
+    });
+    this.a11y.moves = this.moves.map((m) => ({ name: m.name, left: m.left, desc: t(`moveDesc.${m.desc}`) }));
+    this.emitA11y();
+  }
+
+  toastOnce(message) {
+    if (this.lastToast === message && Date.now() - (this.lastToastAt || 0) < 4000) return;
+    this.lastToast = message;
+    this.lastToastAt = Date.now();
+    this.toast(message);
+  }
+
+  /** Use a companion move on the current question. */
+  async useMove(i) {
+    if (this.dialogOpen()) return;
+    const move = this.moves[i];
+    if (!move || move.left <= 0 || this.locked || !this.question) return;
+
+    const effect = move.effect;
+    const steps = this.question.steps || [];
+    const wrongs = this.choiceButtons.filter((b) => !b.choice.isCorrect && !b.disabled);
+    const can = {
+      eliminate: effect.eliminate && wrongs.length > 0,
+      shield: effect.shield && this.shield === 0,
+      hint: effect.hint && steps.length > 1,
+      visual: effect.visual && Boolean(QUESTION_VISUALS[this.question.id]),
+    };
+    if (!Object.values(can).some(Boolean)) {
+      this.toast(t('move.noTarget'));
+      return;
+    }
+
+    move.left -= 1;
+    this.questionMoves.push(move.id);
+    this.movesUsed.push(move.id);
+    this.updateMoveButtons();
+
+    // Pokémon-style announcement + the companion jumps into action.
+    const formName = companionForm(this.avatar.companion, this.avatar.companionStage).name;
+    const c = this.player.companion;
+    this.tweens.add({ targets: c, y: c.y - 34, duration: 200, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
+    this.sparkle(c.x, c.y - 40);
+    this.banner(`⚡ ${t('move.used', { name: formName, move: move.name })}`);
+
+    if (can.eliminate) {
+      Phaser.Utils.Array.Shuffle(wrongs).slice(0, effect.eliminate).forEach((b) => {
+        b.disabled = true;
+        b.state = 'eliminated';
+        b.bg.setFillStyle(0x2a2a2a).setStrokeStyle(2, 0x555555);
+        b.label.setText(`✖ ${b.choice.label}`).setAlpha(0.4);
+        this.sparkle(b.bg.x, b.bg.y);
+      });
+      this.syncChoicesA11y();
+    }
+    if (can.shield) {
+      this.shield = effect.shield;
+      this.attemptText.setText('🛡️');
+    }
+
+    if (can.hint) {
+      // Free hint steps (never the final step), then back to the student.
+      const count = Math.min(effect.hint, steps.length - 1);
+      const ok = await this.runWalkthrough(t('move.used', { name: formName, move: move.name }), count, null);
+      if (!ok) return;
+      this.say(mentor('tryAgainHints'), 'mentor.tryAgainHints');
+      this.setLocked(false);
+    } else if (can.visual && this.showBoard()) {
+      // Play the animation up to (not including) the answer.
+      const total = steps.length;
+      this.board.goToStep(Math.max(0, total - 1), total);
+    }
+  }
+
+  // ------------------------------------------------------------------
   // Question flow
   // ------------------------------------------------------------------
 
@@ -706,6 +868,9 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.flowToken += 1;
     this.question = question;
     this.attempts = 0;
+    this.misses = 0;
+    this.shield = 0;
+    this.questionMoves = [];
     this.idleNudged = false;
     this.questionStartedAt = Date.now();
     this.detector.startQuestion();
@@ -751,7 +916,13 @@ export default class NumberJungleScene extends Phaser.Scene {
     });
   }
 
+  /** True while a page dialog (e.g. My Companion) is open over the game. */
+  dialogOpen() {
+    return typeof document !== 'undefined' && Boolean(document.querySelector('[role="dialog"]'));
+  }
+
   answerByIndex(i) {
+    if (this.dialogOpen()) return;
     const button = this.choiceButtons[i];
     if (button) this.handleAnswer(button);
   }
@@ -767,7 +938,9 @@ export default class NumberJungleScene extends Phaser.Scene {
   showBoard() {
     const spec = QUESTION_VISUALS[this.question?.id];
     if (!spec) return false;
-    if (this.board.spec !== spec) this.board.show(spec, creatureKey(this.avatar.companion));
+    if (this.board.spec !== spec) {
+      this.board.show(spec, companionTextureKey(this.avatar.companion, this.avatar.companionStage));
+    }
     return true;
   }
 
@@ -832,6 +1005,14 @@ export default class NumberJungleScene extends Phaser.Scene {
     });
 
     const detection = this.detector.recordAttempt(false);
+    this.misses += 1;
+    if (this.shield > 0) {
+      // A protecting move was used: this wrong answer doesn't cost a try.
+      this.shield -= 1;
+      this.attempts -= 1;
+      this.toast(t('move.shieldUsed'));
+      this.updateMoveButtons();
+    }
     const remaining = MAX_ATTEMPTS - this.attempts;
     this.attemptText.setText(remaining > 0 ? t('tries', { count: remaining }) : '');
 
@@ -842,13 +1023,13 @@ export default class NumberJungleScene extends Phaser.Scene {
 
     // First miss: hint steps (all but the last). Second miss: full walkthrough.
     const steps = this.question.steps || [];
-    const shown = this.attempts === 1 && steps.length > 1 ? steps.length - 1 : steps.length;
+    const shown = this.misses === 1 && steps.length > 1 ? steps.length - 1 : steps.length;
     const frustrated = detection.state !== 'ok';
     const opener = frustrated ? getMentorLine(this.gradeBand, detection.reason) : mentor('wrongOpener');
 
     const ok = await this.runWalkthrough(opener, shown, frustrated ? `mentor.${detection.reason}` : 'mentor.wrongOpener');
     if (!ok) return;
-    const key = this.attempts === 1 ? 'tryAgainHints' : 'tryAgainFull';
+    const key = this.misses === 1 ? 'tryAgainHints' : 'tryAgainFull';
     this.say(mentor(key), `mentor.${key}`);
     this.setLocked(false);
     this.detector.lastInteractionAt = Date.now();
@@ -923,6 +1104,7 @@ export default class NumberJungleScene extends Phaser.Scene {
           correct,
           attempts: this.attempts,
           timeMs: Date.now() - this.questionStartedAt,
+          movesUsed: this.questionMoves,
         }),
       });
     } catch (err) {
@@ -943,7 +1125,10 @@ export default class NumberJungleScene extends Phaser.Scene {
 
     const questionXp = this.sessionXp;
     let profile = addRewards({ xp: questionXp + QUEST_BONUS_XP, item: 'Golden Shield' });
+    const { earned } = profile;
     [...new Set(this.befriended)].forEach((id) => { profile = addRewards({ creature: id }); });
+    const next = nextEvolution(this.avatar.companionStage);
+    const canEvolve = next && levelFromXp(profile.xp) >= next.level && profile.potions?.[next.potion] > 0;
     this.startXp = profile.xp - questionXp - QUEST_BONUS_XP;
     this.sessionXp += QUEST_BONUS_XP;
     this.updateHud();
@@ -976,22 +1161,34 @@ export default class NumberJungleScene extends Phaser.Scene {
     shield.fillStyle(0xffffff, 0.5).fillCircle(sx - 8, 196, 5);
     add(this.add.text(sx, 262, t('item.goldenShield'), { fontFamily: FONT, fontSize: '15px', color: '#ffd60a', fontStyle: 'bold' }).setOrigin(0.5));
 
-    add(this.add.text(W / 2 + 20, 186, [
+    const lines = [
       t('complete.xpQuestions', { xp: questionXp }),
       t('complete.xpBonus', { xp: QUEST_BONUS_XP }),
       t('complete.total', { xp: profile.xp, level: levelFromXp(profile.xp) }),
-    ].join('\n'), { fontFamily: FONT, fontSize: '17px', color: '#ffffff', lineSpacing: 8, wordWrap: { width: 260 } }).setOrigin(0, 0));
+      ...earned.levels.slice(-1).map((level) => t('complete.levelUp', { level })),
+      // Group potions by type, e.g. "🧪 +2 Growth Potion".
+      ...Object.entries(earned.potions.reduce((acc, p) => ({ ...acc, [p]: (acc[p] || 0) + 1 }), {}))
+        .map(([p, n]) => `${POTIONS[p].icon} ${t('complete.potionEarned', { potion: t(`potion.${p}`) }).replace('+1', `+${n}`)}`),
+    ];
+    add(this.add.text(W / 2 + 20, 166, lines.join('\n'), {
+      fontFamily: FONT, fontSize: '15px', color: '#ffffff', lineSpacing: 5, wordWrap: { width: 270 },
+    }).setOrigin(0, 0));
+    if (canEvolve) {
+      add(this.add.text(W / 2, 326, `✨ ${t('complete.canEvolve')}`, {
+        fontFamily: FONT, fontSize: '15px', color: '#ffd60a', fontStyle: 'bold', align: 'center', wordWrap: { width: 540 },
+      }).setOrigin(0.5));
+    }
 
-    add(this.add.text(W / 2, 310, t('complete.creatures'), { fontFamily: FONT, fontSize: '15px', color: '#b7e4c7' }).setOrigin(0.5));
+    add(this.add.text(W / 2, 352, t('complete.creatures'), { fontFamily: FONT, fontSize: '15px', color: '#b7e4c7' }).setOrigin(0.5));
     const unique = [...new Set(this.befriended)];
     unique.forEach((id, i) => {
       const x = W / 2 - ((unique.length - 1) * 110) / 2 + i * 110;
-      add(this.add.image(x, 410, creatureKey(id)).setOrigin(0.5, 1).setScale(0.36));
-      add(this.add.text(x, 418, CREATURES[id].name, { fontFamily: FONT, fontSize: '13px', color: '#ffffff' }).setOrigin(0.5, 0));
+      add(this.add.image(x, 446, creatureKey(id)).setOrigin(0.5, 1).setScale(0.3));
+      add(this.add.text(x, 450, CREATURES[id].name, { fontFamily: FONT, fontSize: '13px', color: '#ffffff' }).setOrigin(0.5, 0));
     });
 
-    const btn = add(this.add.rectangle(W / 2, 480, 220, 48, 0xe94560).setInteractive({ useHandCursor: true }));
-    add(this.add.text(W / 2, 480, t('complete.playAgain'), { fontFamily: FONT, fontSize: '19px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
+    const btn = add(this.add.rectangle(W / 2, 500, 220, 44, 0xe94560).setInteractive({ useHandCursor: true }));
+    add(this.add.text(W / 2, 500, t('complete.playAgain'), { fontFamily: FONT, fontSize: '19px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
     const playAgain = () => {
       this.scene.restart({
         sessionId: `${this.playerName}-${Date.now()}`,
@@ -1069,6 +1266,8 @@ export default class NumberJungleScene extends Phaser.Scene {
     this.board?.hide();
     this.game.events.off('a11y:answer', this.onExternalAnswer);
     this.game.events.off('a11y:next', this.onExternalNext);
+    this.game.events.off('a11y:move', this.onExternalMove);
+    this.game.events.off('companion:evolved', this.onEvolvedEvent);
     this.mp?.disconnect();
     this.mp = null;
     this.remotePlayers.clear();

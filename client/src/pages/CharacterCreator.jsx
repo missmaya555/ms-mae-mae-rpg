@@ -7,6 +7,7 @@ import {
   DEFAULT_AVATAR, sanitizeAvatar,
 } from '../art/avatarOptions';
 import { loadProfile, saveProfile, DEFAULT_SETTINGS } from '../game/profile';
+import { companionForm } from '../game/companions';
 import { LANGUAGES, setLanguage, t, currentLanguage } from '../i18n';
 
 function cleanName(name) {
@@ -33,6 +34,8 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
   }, [settings]);
 
   const previewUri = useMemo(() => svgToDataUri(avatarSvg(avatar)), [avatar]);
+  // Each companion keeps its own evolution stage (babies start at stage 1).
+  const formOf = (id) => companionForm(id, saved?.companionStages?.[id] || 1);
   const set = (key, value) => setAvatar((a) => ({ ...a, [key]: value }));
   const aiReady = settings.language !== 'ai' || settings.aiLanguage.trim().length >= 2;
   const canStart = name.trim().length >= 2 && aiReady;
@@ -85,8 +88,8 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
           <div style={styles.previewStage}>
             <img src={previewUri} alt="" style={{ width: 180, height: 255 }} />
             <img
-              src={svgToDataUri(CREATURES[avatar.companion].svg)}
-              alt={CREATURES[avatar.companion].name}
+              src={svgToDataUri(formOf(avatar.companion).svg)}
+              alt={formOf(avatar.companion).name}
               style={{ width: 90, height: 90, position: 'absolute', right: 8, bottom: 14 }}
             />
           </div>
@@ -172,8 +175,8 @@ export default function CharacterCreator({ defaultName = '', onDone }) {
                 <button key={c.id} type="button" onClick={() => set('companion', c.id)}
                   title={t(`creatureBlurb.${c.id}`)} aria-pressed={avatar.companion === c.id}
                   style={{ ...styles.creatureBtn, ...(avatar.companion === c.id ? styles.selected : {}) }}>
-                  <img src={svgToDataUri(c.svg)} alt="" style={{ width: 64, height: 64 }} />
-                  <span style={{ fontWeight: 700 }}>{c.name}</span>
+                  <img src={svgToDataUri(formOf(c.id).svg)} alt="" style={{ width: 64, height: 64 }} />
+                  <span style={{ fontWeight: 700 }}>{formOf(c.id).name}</span>
                   <span style={{ fontSize: 11, opacity: 0.75 }}>{t('creator.typeSuffix', { type: t(`creatureType.${c.type}`) })}</span>
                 </button>
               ))}

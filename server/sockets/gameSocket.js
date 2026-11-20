@@ -104,6 +104,14 @@ module.exports = (io) => {
       io.to(roomId).emit('jungle:emote', { id: player.id, emote: payload.emote });
     });
 
+    // A player's companion evolved (or they changed their look).
+    socket.on('jungle:avatar', (payload = {}) => {
+      const player = currentPlayer();
+      if (!player) return;
+      player.avatar = sanitizeAvatar(payload.avatar);
+      socket.to(roomId).emit('jungle:player-avatar', { id: player.id, avatar: player.avatar });
+    });
+
     socket.on('disconnect', leaveRoom);
 
     function currentPlayer() {
