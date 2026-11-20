@@ -7,10 +7,11 @@ import { io } from 'socket.io-client';
 const MOVE_THROTTLE_MS = 100;
 
 export function connectJungle(me, handlers = {}) {
+  // Keep retrying: a free server can take ~30 s to wake up.
   const socket = io({
     transports: ['websocket', 'polling'],
-    reconnectionAttempts: 5,
-    timeout: 5000,
+    reconnectionDelayMax: 10000,
+    timeout: 10000,
   });
 
   let lastMoveSentAt = 0;
@@ -23,6 +24,7 @@ export function connectJungle(me, handlers = {}) {
   });
   socket.on('disconnect', () => handlers.onStatus?.('offline'));
   socket.on('connect_error', () => handlers.onStatus?.('offline'));
+  socket.io.on('reconnect_attempt', () => handlers.onStatus?.('connecting'));
 
   socket.on('jungle:roster', (data) => handlers.onRoster?.(data));
   socket.on('jungle:player-joined', (p) => handlers.onJoin?.(p));

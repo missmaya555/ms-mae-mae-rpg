@@ -12,8 +12,15 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-// Vite's dev server runs on 5173; 3000 is kept for older setups.
-const allowedOrigins = [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:3000'].filter(Boolean);
+// Allowed origins for multiplayer: the live site (Render sets
+// RENDER_EXTERNAL_URL automatically), an optional CLIENT_URL, and local dev
+// (Vite runs on 5173; 3000 is kept for older setups).
+const allowedOrigins = [
+  process.env.RENDER_EXTERNAL_URL,
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean);
 const io = new Server(server, {
   cors: { origin: allowedOrigins, methods: ['GET', 'POST'] }
 });
