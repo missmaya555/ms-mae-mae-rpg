@@ -7,9 +7,11 @@ import { io } from 'socket.io-client';
 const MOVE_THROTTLE_MS = 100;
 
 export function connectJungle(me, handlers = {}) {
-  // Keep retrying: a free server can take ~30 s to wake up.
+  // Start on plain HTTP and upgrade to WebSocket when allowed, so school
+  // networks that block WebSockets still get multiplayer. Keep retrying:
+  // a free server can take ~30 s to wake up.
   const socket = io({
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
     reconnectionDelayMax: 10000,
     timeout: 10000,
   });
