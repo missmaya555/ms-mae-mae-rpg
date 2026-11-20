@@ -1,0 +1,16 @@
+# One-click deploy on Render (https://render.com): New → Blueprint → pick this repo.
+# A single web service runs the API, multiplayer (Socket.io) and the game pages.
+services:
+  - type: web
+    name: ms-mae-mae-rpg
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/quests
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Optional: enables "Other language (AI)". Paste your key in the Render dashboard.
+      - key: GEMINI_API_KEY
+        sync: false

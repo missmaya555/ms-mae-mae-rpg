@@ -30,5 +30,15 @@ app.use('/api/translate', require('./routes/translate'));
 require('./sockets/gameSocket')(io);
 app.use('/api/quests/number-jungle', require('./routes/numberJungle'));
 
+// In production, the same server also serves the built game (client/dist),
+// so one web service runs the whole thing — API, multiplayer and pages.
+const path = require('path');
+const fs = require('fs');
+const clientDist = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^\/(?!api\/|socket\.io\/).*/, (req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+}
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`🎮 Ms. Mae-Mae RPG server running on port ${PORT}`));

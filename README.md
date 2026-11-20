@@ -167,6 +167,16 @@ Open a challenge with **⚔️ Jungle Challenge** (top of the game, or from the 
 - **Blind / low-vision students:** the canvas is mirrored into an accessible layer that screen readers announce, with real buttons for each answer (press Tab). Keys 1–4 answer, Enter / Space continue.
 - **Deaf / hard-of-hearing students:** everything spoken is also captioned, answers are marked ✔ / ✘ (not just by color), and an **ASL panel** plays signer videos for each line. See [`docs/ASL_VIDEOS.md`](docs/ASL_VIDEOS.md) and the clip checklist [`docs/asl-clips.csv`](docs/asl-clips.csv).
 
+### Deploy online (free)
+
+The repo includes a `render.yaml`, so it deploys to [Render](https://render.com) as one web service (game pages, API and multiplayer together):
+
+1. Sign in to Render with GitHub → **New** → **Blueprint** → pick `ms-mae-mae-rpg`.
+2. Click **Apply**. Render runs `npm install && npm run build`, then `npm start`.
+3. Optional: add `GEMINI_API_KEY` under the service's **Environment** tab to turn on "Other language (AI)".
+
+On the free plan the service sleeps when unused, so the first visit can take ~30 seconds to wake up.
+
 ---
 
 ## 🎯 Game Mechanics
